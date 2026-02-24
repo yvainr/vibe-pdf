@@ -11,6 +11,9 @@ const ballet = Ballet({
 export const metadata: Metadata = {
   title: "Vibe PDF",
   description: "A minimalistic, AI-native PDF reader for students",
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({
