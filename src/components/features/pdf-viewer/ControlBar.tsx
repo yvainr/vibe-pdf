@@ -65,7 +65,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                 <div className="flex items-center gap-2">
                     <button
                         onClick={onZoomOut}
-                        disabled={zoomLevel <= 0.5}
+                        disabled={zoomLevel <= 0.2}
                         className="liquid-glass flex h-7 w-7 items-center justify-center rounded-full transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 active:scale-95 pointer-events-auto bg-black/90"
                         aria-label="Zoom out"
                     >
@@ -78,7 +78,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                     </div>
                     <button
                         onClick={onZoomIn}
-                        disabled={zoomLevel >= 2.0}
+                        disabled={zoomLevel >= 4.0}
                         className="liquid-glass flex h-7 w-7 items-center justify-center rounded-full transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 active:scale-95 pointer-events-auto bg-black/90"
                         aria-label="Zoom in"
                     >
