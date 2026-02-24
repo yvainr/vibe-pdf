@@ -106,6 +106,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
       .replace(/(<\/h[1-3]>)\s*<\/p>/g, '$1')
       .replace(/<p class="mb-4">\s*(<ul[^>]*>)/g, '$1')
       .replace(/(<\/ul>)\s*<\/p>/g, '$1');
+
+    // Restore math expressions
+    mathExpressions.forEach((mathHtml, index) => {
+      html = html.replace(`__MATH_BLOCK_${index}__`, mathHtml);
+      html = html.replace(`__MATH_INLINE_${index}__`, mathHtml);
+    });
+
     return html;
   };
 
