@@ -2,6 +2,8 @@
 
 import { X, Loader2 } from "lucide-react";
 import { useEffect, useRef } from "react";
+import katex from "katex";
+import "katex/dist/katex.min.css";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -28,6 +30,67 @@ export const Sidebar: React.FC<SidebarProps> = ({
     window.addEventListener("keydown", handleEscape);
     return () => window.removeEventListener("keydown", handleEscape);
   }, [isOpen, onClose]);
+
+  // Process math formulas and markdown
+  const processContent = (text: string): string => {
+    if (!text) return "No explanation available.";
+
+    // Store math expressions temporarily with placeholders
+    const mathExpressions: string[] = [];
+    let processedText = text;
+
+    // Process display math: $$...$$ or \[...\]
+    processedText = processedText.replace(/\$\$([\s\S]*?)\$\$|\\\[([\s\S]*?)\\\]/g, (match, p1, p2) => {
+      const mathContent = p1 || p2;
+      try {
+        const rendered = katex.renderToString(mathContent, {
+          displayMode: true,
+          throwOnError: false,
+          output: 'html'
+        });
+        const placeholder = `__MATH_BLOCK_${mathExpressions.length}__`;
+        mathExpressions.push(`<div class="my-4 overflow-x-auto">${rendered}</div>`);
+        return placeholder;
+      } catch (e) {
+        return match;
+      }
+    });
+
+    // Process inline math: \(...\)
+    processedText = processedText.replace(/\\\((.*?)\\\)/g, (match, mathContent) => {
+      try {
+        const rendered = katex.renderToString(mathContent, {
+          displayMode: false,
+          throwOnError: false,
+          output: 'html'
+        });
+        const placeholder = `__MATH_INLINE_${mathExpressions.length}__`;
+        mathExpressions.push(`<span class="inline-block mx-0.5">${rendered}</span>`);
+        return placeholder;
+      } catch (e) {
+        return match;
+      }
+    });
+
+    // Apply markdown transformations
+    let html = processedText
+      .replace(/^### (.*)$/gm, '<h3 class="text-lg font-bold mt-8 mb-3 text-white border-l-2 border-gray-400 pl-2 py-1">$1</h3>')
+      .replace(/^## (.*)$/gm, '<h2 class="text-xl font-bold mt-8 mb-4 text-white border-b border-white/20 pb-2">$1</h2>')
+      .replace(/^# (.*)$/gm, '<h1 class="text-2xl font-bold mt-10 mb-5 text-white">$1</h1>')
+      .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em class="italic">$1</em>')
+      .replace(/`(.*?)`/g, '<code class="bg-white/10 px-1.5 py-0.5 rounded text-xs font-mono">$1</code>')
+      .replace(/\n\n+/g, '</p><p class="mb-4">');
+
+
+    // Restore math expressions
+    mathExpressions.forEach((mathHtml, index) => {
+      html = html.replace(`__MATH_BLOCK_${index}__`, mathHtml);
+      html = html.replace(`__MATH_INLINE_${index}__`, mathHtml);
+    });
+
+    return html;
+  };
 
   return (
     <>
@@ -64,20 +127,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
           ) : (
             <div className="prose prose-invert max-w-none text-white/90">
-              <div 
+              <div
                 className="text-sm leading-relaxed"
-                dangerouslySetInnerHTML={{ 
-                  __html: '<p class="mb-4">' + (content || "No explanation available.")
-                    .replace(/\n\n+/g, '</p><p class="mb-4">')
-                    .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>')
-                    .replace(/\*(.*?)\*/g, '<em class="italic">$1</em>')
-                    .replace(/`(.*?)`/g, '<code class="bg-white/10 px-1.5 py-0.5 rounded text-xs font-mono">$1</code>')
-                    .replace(/^### (.*$)/gm, '</p><h3 class="text-lg font-bold mt-6 mb-3 text-white border-l-4 border-blue-400 pl-4 py-1">$1</h3><p class="mb-4">')
-                    .replace(/^## (.*$)/gm, '</p><h2 class="text-xl font-bold mt-8 mb-4 text-white border-b border-white/20 pb-2">$1</h2><p class="mb-4">')
-                    .replace(/^# (.*$)/gm, '</p><h1 class="text-2xl font-bold mt-10 mb-5 text-white">$1</h1><p class="mb-4">')
-                    .replace(/^\d+\.\s+(.*$)/gm, '</p><ul class="list-decimal ml-6 mb-4"><li class="mb-2">$1</li></ul><p class="mb-4">')
-                    .replace(/^-\s+(.*$)/gm, '</p><ul class="list-disc ml-6 mb-4"><li class="mb-2">$1</li></ul><p class="mb-4">')
-                    + '</p>'
+                dangerouslySetInnerHTML={{
+                  __html: processContent(content)
                 }}
               />
             </div>
