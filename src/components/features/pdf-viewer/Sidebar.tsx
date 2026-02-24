@@ -74,21 +74,38 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
     // Apply markdown transformations
     let html = processedText
+      .replace(/\r\n/g, '\n')
+
+      // Headers
       .replace(/^### (.*)$/gm, '<h3 class="text-lg font-bold mt-8 mb-3 text-white border-l-2 border-gray-400 pl-2 py-1">$1</h3>')
       .replace(/^## (.*)$/gm, '<h2 class="text-xl font-bold mt-8 mb-4 text-white border-b border-white/20 pb-2">$1</h2>')
       .replace(/^# (.*)$/gm, '<h1 class="text-2xl font-bold mt-10 mb-5 text-white">$1</h1>')
+
+      // Inline formatting
       .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>')
       .replace(/\*(.*?)\*/g, '<em class="italic">$1</em>')
       .replace(/`(.*?)`/g, '<code class="bg-white/10 px-1.5 py-0.5 rounded text-xs font-mono">$1</code>')
-      .replace(/\n\n+/g, '</p><p class="mb-4">');
 
+      // Convert markdown list lines "- item" into <li>...</li>
+      .replace(/^\s*-\s+(.*)$/gm, '<li class="ml-6 mb-2 list-disc">$1</li>')
 
-    // Restore math expressions
-    mathExpressions.forEach((mathHtml, index) => {
-      html = html.replace(`__MATH_BLOCK_${index}__`, mathHtml);
-      html = html.replace(`__MATH_INLINE_${index}__`, mathHtml);
-    });
+      // Group consecutive <li> into one <ul>
+      .replace(/(?:<li class="ml-6 mb-2 list-disc">.*?<\/li>\n?)+/g, (match) => {
+        return `<ul class="mb-4">${match}</ul>`;
+      })
 
+      // Paragraphs (double line breaks)
+      .replace(/\n\n+/g, '</p><p class="mb-4">')
+
+    // Wrap whole content
+    html = `<p class="mb-4">${html}</p>`;
+
+    // Clean invalid <p> around block tags (important)
+    html = html
+      .replace(/<p class="mb-4">\s*(<h[1-3][^>]*>)/g, '$1')
+      .replace(/(<\/h[1-3]>)\s*<\/p>/g, '$1')
+      .replace(/<p class="mb-4">\s*(<ul[^>]*>)/g, '$1')
+      .replace(/(<\/ul>)\s*<\/p>/g, '$1');
     return html;
   };
 

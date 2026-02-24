@@ -31,6 +31,7 @@ export const PDFViewer: React.FC<PDFViewerProps> = () => {
     const [sidebarContent, setSidebarContent] = useState<string>("");
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [showThumbnails, setShowThumbnails] = useState<boolean>(false);
+    const [isDragOver, setIsDragOver] = useState<boolean>(false);
     const [scale, setScale] = useState<number>(1.4);
     const [language, setLanguage] = useState<string>("English");
     const containerRef = useRef<HTMLDivElement>(null);
@@ -64,8 +65,7 @@ export const PDFViewer: React.FC<PDFViewerProps> = () => {
     }, [pdfDocument, activeFileIndex]);
 
     // File management
-    const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-        const selectedFile = e.target.files?.[0];
+    const addFile = useCallback((selectedFile: File) => {
         if (selectedFile && selectedFile.type === "application/pdf") {
             const newFileState: FileState = {
                 file: selectedFile,
@@ -80,6 +80,36 @@ export const PDFViewer: React.FC<PDFViewerProps> = () => {
                 return newFiles;
             });
         }
+    }, []);
+
+    const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        const selectedFile = e.target.files?.[0];
+        if (selectedFile) {
+            addFile(selectedFile);
+        }
+    }, [addFile]);
+
+    const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragOver(false);
+
+        const droppedFile = e.dataTransfer.files?.[0];
+        if (droppedFile) {
+            addFile(droppedFile);
+        }
+    }, [addFile]);
+
+    const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragOver(true);
+    }, []);
+
+    const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragOver(false);
     }, []);
 
     const handleAddFile = useCallback(() => {
@@ -248,9 +278,10 @@ export const PDFViewer: React.FC<PDFViewerProps> = () => {
 
                             The student is viewing page(s) ${pagesToExplain.join(", ")}. Please provide a detailed explanation of the content on these page(s), including:
                             1. Key concepts and ideas
-                            2. Important details and context
-                            3. How it relates to the previous pages
-                            4. Any questions the student might have
+                            2. Explanations of reasons and meaning for every concept and idea
+                            3. Important details and context
+                            4. Important connections to previous content in the document
+                            5. Any questions the student might have with detailed answers to those questions
 
                             IMPORTANT: Please respond in ${languageNames[language] || "English"}. Be clear, concise, and educational.`;
 
@@ -363,8 +394,18 @@ export const PDFViewer: React.FC<PDFViewerProps> = () => {
                         onChange={handleFileChange}
                         className="hidden"
                     />
-                    <div className="liquid-glass relative flex h-96 w-96 items-center justify-center flex-col rounded-2xl 
-                    border-1 border-dashed border-white/20 transition-all duration-300 hover:border-white/40 hover:bg-white/10 hover:scale-105">
+                    <div 
+                        className={`liquid-glass relative flex h-96 w-96 items-center justify-center flex-col rounded-2xl 
+                        border-1 border-dashed transition-all duration-300 ${
+                            isDragOver 
+                                ? 'border-blue-400 bg-blue-500/20 scale-105' 
+                                : 'border-white/20 hover:border-white/40 hover:bg-white/10 hover:scale-105'
+                        }`}
+                        onDrop={handleDrop}
+                        onDragOver={handleDragOver}
+                        onDragEnter={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                    >
                         <Plus className="relative h-32 w-32 text-white/5" strokeWidth={1} />
                         <div className="relative z-10 flex flex-col items-center gap-3">
                             <span className="text-sm font-medium text-white/60">
